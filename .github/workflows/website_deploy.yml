@@ -11,15 +11,12 @@ on:
         description: 'AWS CodeDeploy deployment group name'
         required: true
         type: string
-
-env:
-  AWS_REGION: us-east-1
-  S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    env:
+      AWS_REGION: eu-west-1
+      S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
