@@ -1,4 +1,4 @@
-name: Deploy Website with CodeDeploys
+name: Deploy Website with CodeDeploy
 
 on:
   push:
