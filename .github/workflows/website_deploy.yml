@@ -1,0 +1,46 @@
+name: Deploy Website with CodeDeploy
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  AWS_REGION: eu-west-1
+  S3_BUCKET: my-codedeploy-bucket
+  CODEDEPLOY_APP: isaac-code-deploy-app
+  CODEDEPLOY_GROUP: isaac-codedeploy-deploy-group
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Zip source code
+        run: |
+          zip -r website.zip index.html scripts appspec.yml
+
+      - name: Upload to S3
+        run: |
+          TIMESTAMP=$(date +%s)
+          S3_KEY=website-$TIMESTAMP.zip
+          aws s3 cp website.zip s3://$S3_BUCKET/$S3_KEY
+          echo "S3_KEY=$S3_KEY" >> $GITHUB_ENV
+
+      - name: Deploy via CodeDeploy
+        run: |
+          aws deploy create-deployment \
+            --application-name $CODEDEPLOY_APP \
+            --deployment-group-name $CODEDEPLOY_GROUP \
+            --s3-location bucket=$S3_BUCKET,key=$S3_KEY,bundleType=zip \
+            --file-exists-behavior OVERWRITE \
+            --region $AWS_REGION
