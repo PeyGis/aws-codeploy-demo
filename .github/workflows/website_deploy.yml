@@ -1,14 +1,20 @@
 name: Deploy Website with CodeDeploy
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      application-name:
+        description: 'AWS CodeDeploy application name'
+        required: true
+        type: string
+      deployment-group:
+        description: 'AWS CodeDeploy deployment group name'
+        required: true
+        type: string
 
 env:
-  AWS_REGION: eu-west-1
-  S3_BUCKET: isaac-codedeploy-bucket
-  CODEDEPLOY_APP: isaac-code-deploy-app
-  CODEDEPLOY_GROUP: isaac-codedeploy-deploy-group
+  AWS_REGION: us-east-1
+  S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
 
 jobs:
   deploy:
@@ -39,8 +45,8 @@ jobs:
       - name: Deploy via CodeDeploy
         run: |
           aws deploy create-deployment \
-            --application-name $CODEDEPLOY_APP \
-            --deployment-group-name $CODEDEPLOY_GROUP \
+            --application-name "${{ inputs.application-name }}" \
+            --deployment-group-name "${{ inputs.deployment-group }}" \
             --s3-location bucket=$S3_BUCKET,key=$S3_KEY,bundleType=zip \
             --file-exists-behavior OVERWRITE \
             --region $AWS_REGION
