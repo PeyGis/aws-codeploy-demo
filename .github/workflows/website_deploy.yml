@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: eu-west-1
-      S3_BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+      S3_BUCKET: isaac-codedeploy-bucket
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
