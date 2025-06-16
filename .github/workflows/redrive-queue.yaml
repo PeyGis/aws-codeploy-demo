@@ -20,7 +20,7 @@ jobs:
           baseUrl: https://api.getport.io
           operation: PATCH_RUN
           runId: ${{fromJson(inputs.port_context).runId}}
-          logMessage: Configuring AWS credentials to purge SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }}
+          logMessage: Configuring AWS credentials to redrive SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -30,9 +30,9 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Purge SQS queue
-        run: aws sqs purge-queue --queue-url ${{ fromJson(inputs.port_context).entity.properties.link }}
+        run: aws sqs start-message-move-task --source-arn ${{ fromJson(inputs.port_context).entity.properties.link }} --destination-arn ${{ fromJson(inputs.port_context).entity.properties.link }} --max-number-of-messages-per-second ${{ fromJson(inputs.port_context).entity.properties.link }} 
 
-      - name: Inform Port about SQS queue purge success
+      - name: Inform Port about SQS redrive success
         if: success()
         uses: port-labs/port-github-action@v1
         with:
@@ -42,10 +42,10 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
           status: 'SUCCESS'
-          logMessage: ✅ SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }} purged successfully
-          summary: SQS queue purge completed successfully
+          logMessage: ✅ SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }} redrived successfully
+          summary: SQS queue redrive completed successfully
 
-      - name: Inform Port about SQS queue purge failure
+      - name: Inform Port about SQS queue redrive failure
         if: failure()
         uses: port-labs/port-github-action@v1
         with:
@@ -55,5 +55,5 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
           status: 'FAILURE'
-          logMessage: ❌ Failed to purge SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }}
-          summary: SQS queue purge failed
+          logMessage: ❌ Failed to redrive SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }}
+          summary: SQS queue redrive failed
