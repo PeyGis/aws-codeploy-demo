@@ -21,7 +21,7 @@ on:
         type: string
 
 jobs:
-  purge-queue:
+  redrive-queue:
     runs-on: ubuntu-latest
     steps:
       - name: Inform Port of workflow start
