@@ -7,6 +7,18 @@ on:
         required: true
         description: 'Action and general context (blueprint, entity, run id, etc...)'
         type: string
+      source_queue:
+        description: 'The source queue'
+        required: true
+        type: string
+      destination_queue:
+        description: 'The destination queque'
+        required: true
+        type: string
+      max_messages_per_second:
+        description: 'Max number of messages per second'
+        required: true
+        type: string
 
 jobs:
   purge-queue:
@@ -20,7 +32,7 @@ jobs:
           baseUrl: https://api.getport.io
           operation: PATCH_RUN
           runId: ${{fromJson(inputs.port_context).runId}}
-          logMessage: Configuring AWS credentials to redrive SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }}
+          logMessage: Configuring AWS credentials to redrive SQS queue from ${{ inputs.source_queue }} to ${{ inputs.destination_queue }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -30,7 +42,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Purge SQS queue
-        run: aws sqs start-message-move-task --source-arn ${{ fromJson(inputs.port_context).entity.properties.link }} --destination-arn ${{ fromJson(inputs.port_context).entity.properties.link }} --max-number-of-messages-per-second ${{ fromJson(inputs.port_context).entity.properties.link }} 
+        run: aws sqs start-message-move-task --source-arn ${{ inputs.source_queue }} --destination-arn ${{ inputs.destination_queue }} --max-number-of-messages-per-second ${{ inputs.max_messages_per_second }} 
 
       - name: Inform Port about SQS redrive success
         if: success()
@@ -42,7 +54,7 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
           status: 'SUCCESS'
-          logMessage: ✅ SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }} redrived successfully
+          logMessage: ✅ SQS queue with ARN ${{ inputs.source_queue }} redrived successfully
           summary: SQS queue redrive completed successfully
 
       - name: Inform Port about SQS queue redrive failure
@@ -55,5 +67,5 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
           status: 'FAILURE'
-          logMessage: ❌ Failed to redrive SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }}
+          logMessage: ❌ Failed to redrive SQS queue with ARN ${{ inputs.source_queue }}
           summary: SQS queue redrive failed
