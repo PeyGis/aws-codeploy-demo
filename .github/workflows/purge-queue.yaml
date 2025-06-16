@@ -20,7 +20,7 @@ jobs:
           baseUrl: https://api.getport.io
           operation: PATCH_RUN
           runId: ${{fromJson(inputs.port_context).runId}}
-          logMessage: Configuring AWS credentials to purge SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.url }}
+          logMessage: Configuring AWS credentials to purge SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -30,7 +30,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Purge SQS queue
-        run: aws sqs purge-queue --queue-url ${{ fromJson(inputs.port_context).entity.link }}
+        run: aws sqs purge-queue --queue-url ${{ fromJson(inputs.port_context).entity.properties.link }}
 
       - name: Inform Port about SQS queue purge success
         if: success()
