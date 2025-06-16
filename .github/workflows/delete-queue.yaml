@@ -1,0 +1,59 @@
+name: delete SQS Queue
+
+on:
+  workflow_dispatch:
+    inputs:
+      port_context:
+        required: true
+        description: 'Action and general context (blueprint, entity, run id, etc...)'
+        type: string
+
+jobs:
+  delete-queue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inform Port of workflow start
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).runId}}
+          logMessage: Configuring AWS credentials to delete SQS queue with Name ${{ fromJson(inputs.port_context).entity.title }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: delete SQS queue
+        run: aws sqs delete-queue --queue-url ${{ fromJson(inputs.port_context).entity.properties.link }}
+
+      - name: Inform Port about SQS queue delete success
+        if: success()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'SUCCESS'
+          logMessage: ✅ SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }} deleted successfully
+          summary: SQS queue delete completed successfully
+
+      - name: Inform Port about SQS queue delete failure
+        if: failure()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'FAILURE'
+          logMessage: ❌ Failed to delete SQS queue with URL ${{ fromJson(inputs.port_context).entity.properties.link }}
+          summary: SQS queue delete failed
