@@ -30,7 +30,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Reboot RDS instance
-        run: aws ec2 reboot-instances --instance-ids ${{ fromJson(inputs.port_context).entity.identifier }}
+        run: aws rds reboot-db-instance --db-instance-identifier ${{ fromJson(inputs.port_context).entity.identifier }}
 
       - name: Inform Port about RDS reboot success
         if: success()
