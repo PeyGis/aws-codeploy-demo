@@ -7,6 +7,10 @@ on:
         required: true
         description: 'Action and general context (blueprint, entity, run id, etc...)'
         type: string
+      should_create_db_snapshot:
+        required: true
+        description: 'Specifies whether to skip the creation of a final DB snapshot before deleting the instance'
+        type: string
 
 jobs:
   delete-rds-instance:
@@ -30,7 +34,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Delete RDS instance
-        run: aws rds delete-db-instance --db-instance-identifier ${{ fromJson(inputs.port_context).entity.identifier }}
+        run: aws rds delete-db-instance --db-instance-identifier ${{ fromJson(inputs.port_context).entity.identifier }} ${{ inputs.should_create_db_snapshot }}
 
       - name: Inform Port about RDS delete success
         if: success()
