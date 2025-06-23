@@ -1,0 +1,67 @@
+name: Start EC2 Instance
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain_name:
+        required: true
+        description: 'The fully qualified domain name (FQDN) that you want to secure with an ACM certificate'
+        type: string
+      validation_method:
+        required: true
+        description: 'The method you want to use to validate that you own or control domain'
+        type: string
+      port_context:
+        required: true
+        description: 'Action and general context (blueprint, entity, run id, etc...)'
+        type: string
+
+jobs:
+  reboot-instance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inform Port of workflow start
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).runId}}
+          logMessage: Configuring AWS credentials to request public ACM cert with domain name ${{ inputs.domain_name }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Request ACM certificate
+        run: aws ec2 start-instances --instance-ids ${{ fromJson(inputs.port_context).entity.identifier }}
+
+      - name: Inform Port about EC2 start success
+        if: success()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'SUCCESS'
+          logMessage: ✅ EC2 instance with ID ${{ fromJson(inputs.port_context).entity.identifier }} started successfully
+          summary: EC2 instance start completed successfully
+
+      - name: Inform Port about EC2 start failure
+        if: failure()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'FAILURE'
+          logMessage: ❌ Failed to start EC2 instance with ID ${{ fromJson(inputs.port_context).entity.identifier }}
+          summary: EC2 instance start failed
