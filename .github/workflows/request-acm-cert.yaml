@@ -1,4 +1,4 @@
-name: Start EC2 Instance
+name: Request ACM Certificate
 
 on:
   workflow_dispatch:
@@ -38,9 +38,9 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Request ACM certificate
-        run: aws ec2 start-instances --instance-ids ${{ fromJson(inputs.port_context).entity.identifier }}
+        run: aws acm request-certificate --domain-name ${{ inputs.domain_name }} --validation-method ${{ inputs.validation_method }}
 
-      - name: Inform Port about EC2 start success
+      - name: Inform Port about ACM certificate success
         if: success()
         uses: port-labs/port-github-action@v1
         with:
@@ -50,10 +50,10 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
           status: 'SUCCESS'
-          logMessage: ✅ EC2 instance with ID ${{ fromJson(inputs.port_context).entity.identifier }} started successfully
-          summary: EC2 instance start completed successfully
+          logMessage: ✅ ACM certificate for domain ${{ inputs.domain_name }} requested successfully
+          summary: ACM certificate requested successfully
 
-      - name: Inform Port about EC2 start failure
+      - name: Inform Port about ACM certificate failure
         if: failure()
         uses: port-labs/port-github-action@v1
         with:
@@ -63,5 +63,5 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
           status: 'FAILURE'
-          logMessage: ❌ Failed to start EC2 instance with ID ${{ fromJson(inputs.port_context).entity.identifier }}
-          summary: EC2 instance start failed
+          logMessage: ❌ Failed to request ACM certificate for domain ${{ inputs.domain_name }}
+          summary: ACM certificate request failed
