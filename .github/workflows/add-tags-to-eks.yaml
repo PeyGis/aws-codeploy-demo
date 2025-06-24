@@ -34,7 +34,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Add tags to EKS
-        run: aws eks tag-resource ----resource-arn ${{ fromJson(inputs.port_context).entity.properties.arn }} --tags ksjsd
+        run: aws eks tag-resource ----resource-arn ${{ fromJson(inputs.port_context).entity.properties.arn }} --tags ${{ inputs.resource_tags }}
 
       - name: Inform Port about EKS tag addition success
         if: success()
