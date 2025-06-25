@@ -1,0 +1,73 @@
+name: Start GCP Compute Engine Instance
+
+on:
+  workflow_dispatch:
+    inputs:
+      port_context:
+        required: true
+        description: 'Action and general context (blueprint, entity, run id, etc...)'
+        type: string
+
+jobs:
+  start-instance:
+    runs-on: ubuntu-latest
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - uses: 'actions/checkout@v4'
+      
+      - name: Inform Port of workflow start
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).runId}}
+          logMessage: Configuring GCP credentials to start Compute Engine instance with ID ${{ fromJson(inputs.port_context).entity.identifier }}
+
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: 'Use gcloud CLI'
+        run: 'gcloud info'
+        
+      - name: Start Compute Engine instance
+        run: |
+          gcloud compute instances start ${{ fromJson(inputs.port_context).entity.identifier }} \
+            --zone=$(echo ${{ fromJson(inputs.port_context).entity.properties.selfLink }} | sed 's/.*zones\/\([^\/]*\)\/.*/\1/')
+
+      - name: Inform Port about Compute Engine start success
+        if: success()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'SUCCESS'
+          logMessage: ✅ Compute Engine instance with ID ${{ fromJson(inputs.port_context).entity.identifier }} started successfully
+          summary: Compute Engine instance start completed successfully
+
+      - name: Inform Port about Compute Engine start failure
+        if: failure()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'FAILURE'
+          logMessage: ❌ Failed to start Compute Engine instance with ID ${{ fromJson(inputs.port_context).entity.identifier }}
+          summary: Compute Engine instance start failed
