@@ -26,7 +26,7 @@ jobs:
           baseUrl: https://api.getport.io
           operation: PATCH_RUN
           runId: ${{fromJson(inputs.port_context).runId}}
-          logMessage: Configuring GCP credentials to start Compute Engine instance with ID ${{ fromJson(inputs.port_context).entity.identifier }}
+          logMessage: Configuring GCP credentials to start Compute Engine instance with name ${{ fromJson(inputs.port_context).entity.title }}
 
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
@@ -35,17 +35,11 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: 'Use gcloud CLI'
-        run: 'gcloud info'
         
       - name: Start Compute Engine instance
         run: |
-          gcloud compute instances start ${{ fromJson(inputs.port_context).entity.identifier }} \
-            --zone=$(echo ${{ fromJson(inputs.port_context).entity.properties.selfLink }} | sed 's/.*zones\/\([^\/]*\)\/.*/\1/')
-
+          gcloud compute instances start ${{ fromJson(inputs.port_context).entity.title }} --zone=${{ fromJson(inputs.port_context).entity.properties.zone }}'
+          
       - name: Inform Port about Compute Engine start success
         if: success()
         uses: port-labs/port-github-action@v1
@@ -56,7 +50,7 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
           status: 'SUCCESS'
-          logMessage: ✅ Compute Engine instance with ID ${{ fromJson(inputs.port_context).entity.identifier }} started successfully
+          logMessage: ✅ Compute Engine instance with name ${{ fromJson(inputs.port_context).entity.title }} started successfully
           summary: Compute Engine instance start completed successfully
 
       - name: Inform Port about Compute Engine start failure
@@ -69,5 +63,5 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
           status: 'FAILURE'
-          logMessage: ❌ Failed to start Compute Engine instance with ID ${{ fromJson(inputs.port_context).entity.identifier }}
+          logMessage: ❌ Failed to start Compute Engine instance with name ${{ fromJson(inputs.port_context).entity.title }}
           summary: Compute Engine instance start failed
