@@ -38,7 +38,7 @@ jobs:
         
       - name: Start Compute Engine instance
         run: |
-          gcloud compute instances start ${{ fromJson(inputs.port_context).entity.title }} --zone=${{ fromJson(inputs.port_context).entity.properties.zone }}'
+          gcloud compute instances start ${{ fromJson(inputs.port_context).entity.title }} --zone=${{ fromJson(inputs.port_context).entity.properties.zone }}
           
       - name: Inform Port about Compute Engine start success
         if: success()
