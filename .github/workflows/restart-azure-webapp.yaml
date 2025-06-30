@@ -1,0 +1,61 @@
+name: Restart Azure Web App
+
+on:
+  workflow_dispatch:
+    inputs:
+      port_context:
+        required: true
+        description: 'Action and general context (blueprint, entity, run id, etc...)'
+        type: string
+
+jobs:
+  restart-webapp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inform Port of workflow restart
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).runId}}
+          logMessage: Configuring Azure credentials to restart web app ${{ fromJson(inputs.port_context).entity.title }}
+
+      - name: Azure Login
+        uses: azure/login@v2
+        env:
+          AZURE_LOGIN_PRE_CLEANUP: true
+          AZURE_LOGIN_POST_CLEANUP: true
+        with:
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ fromJson(inputs.port_context).subscription_id }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+
+      - name:  Azure Web App
+        run: |
+          az webapp restart --name ${{ fromJson(inputs.port_context).entity.title }} --resource-group ${{ fromJson(inputs.port_context).resource_group }}
+
+      - name: Inform Port about web app restart success
+        if: success()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'SUCCESS'
+          logMessage: ✅ Azure web app ${{ fromJson(inputs.port_context).entity.title }} restarted successfully
+          summary: Azure web app restarted successfully
+
+      - name: Inform Port about web app restart failure
+        if: failure()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'FAILURE'
+          logMessage: ❌ Failed to restart Azure web app ${{ fromJson(inputs.port_context).entity.title }}
+          summary: Azure web app restart failed
