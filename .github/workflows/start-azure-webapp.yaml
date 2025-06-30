@@ -34,7 +34,7 @@ jobs:
         run: |
           az webapp start \
             --name ${{ fromJson(inputs.port_context).entity.title }} \
-            --resource-group ${{ fromJson(inputs.port_context).entity.relations.resourceGroup }}
+            --resource-group ${{ fromJson(inputs.port_context).resource_group }}
 
       - name: Inform Port about web app start success
         if: success()
