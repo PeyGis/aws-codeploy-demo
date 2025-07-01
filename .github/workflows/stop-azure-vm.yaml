@@ -32,7 +32,7 @@ jobs:
 
       - name: Stop Azure Virtual Machine
         run: |
-          az vm stop --name ${{ fromJson(inputs.port_context).entity.title }} --resource-group ${{ fromJson(inputs.port_context).resource_group }}
+          az vm deallocate --name ${{ fromJson(inputs.port_context).entity.title }} --resource-group ${{ fromJson(inputs.port_context).resource_group }}
 
       - name: Inform Port about VM stop success
         if: success()
