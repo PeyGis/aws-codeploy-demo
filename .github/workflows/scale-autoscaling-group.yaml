@@ -40,11 +40,6 @@ jobs:
           MAX_SIZE=${{ fromJson(inputs.port_context).entity.properties.maxSize }}
           OPERATION="${{ inputs.operation }}"
           
-          echo "Current desired capacity: $CURRENT_DESIRED"
-          echo "Min size: $MIN_SIZE"
-          echo "Max size: $MAX_SIZE"
-          echo "Operation: $OPERATION"
-          
           case $OPERATION in
             "scale up")
               NEW_DESIRED=$((CURRENT_DESIRED + 1))
@@ -80,15 +75,10 @@ jobs:
 
       - name: Scale Auto Scaling Group
         run: |
-          echo "Current max size: $MAX_SIZE"
-          echo "New desired capacity: $NEW_DESIRED"
           
           # Convert to integers for comparison
           NEW_DESIRED_INT=$(echo "$NEW_DESIRED" | bc)
           MAX_SIZE_INT=$(echo "$MAX_SIZE" | bc)
-          
-          echo "New desired capacity (int): $NEW_DESIRED_INT"
-          echo "Max size (int): $MAX_SIZE_INT"
           
           # If desired capacity exceeds max size, update both desired and max
           if [ "$NEW_DESIRED_INT" -gt "$MAX_SIZE_INT" ]; then
