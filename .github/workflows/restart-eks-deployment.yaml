@@ -29,8 +29,20 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Update EKS Kubeconfig
-        run: aws eks --region eu-west-1 update-kubeconfig --name floral-dance-mushroom
+      - name: Set KUBECONFIG manually
+        run: |
+          mkdir -p $HOME/.kube
+          aws eks --region eu-west-1 update-kubeconfig --name floral-dance-mushroom
+          export KUBECONFIG=$HOME/.kube/config
+          aws eks get-token --region eu-west-1 --cluster-name floral-dance-mushroom
+
+      - name: Debug Credds
+        run: |
+          kubectl config view
+          aws sts get-caller-identity
+
+      # - name: Update EKS Kubeconfig
+      #   run: aws eks --region eu-west-1 update-kubeconfig --name floral-dance-mushroom
 
       # The KUBECONFIG env var is automatically exported and picked up by kubectl.
       - id: 'get-pods'
