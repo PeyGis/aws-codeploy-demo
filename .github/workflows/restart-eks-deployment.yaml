@@ -9,7 +9,7 @@ on:
         type: string
 
 jobs:
-  tag-eks-cluster:
+  restart-deployment:
     runs-on: ubuntu-latest
     steps:
       - name: Inform Port of workflow start
