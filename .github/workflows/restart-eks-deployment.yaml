@@ -3,10 +3,6 @@ name: Add Tags to EKS Cluster
 on:
   workflow_dispatch:
     inputs:
-      resource_tags:
-        required: true
-        description: 'Metadata that assists with categorization and organization.'
-        type: string
       port_context:
         required: true
         description: 'Action and general context (blueprint, entity, run id, etc...)'
