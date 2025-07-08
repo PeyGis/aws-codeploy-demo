@@ -37,11 +37,19 @@ jobs:
       #     aws eks get-token --region eu-west-1 --cluster-name floral-dance-mushroom
 
       - name: Update EKS Kubeconfig
-        run: aws eks --region eu-west-1 update-kubeconfig --name floral-dance-mushroom
+        run: aws eks --region eu-west-1 update-kubeconfig --name ${{ fromJson(inputs.port_context).entity.properties.Cluster }}
 
-      # The KUBECONFIG env var is automatically exported and picked up by kubectl.
-      - id: 'get-pods'
-        run: 'kubectl get pods'
+      - name: Get Pods
+        run: |
+          kubectl get pods -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }}
+          
+      - name: Restart Kubernetes deployment
+        run: |
+          kubectl rollout restart deployment/${{ fromJson(inputs.port_context).entity.identifier }} -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }}
+          
+      - name: Wait for deployment rollout
+        run: |
+          kubectl rollout status deployment/${{ fromJson(inputs.port_context).entity.identifier }} -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }} --timeout=300s
 
       - name: Inform Port about EKS tag addition success
         if: success()
