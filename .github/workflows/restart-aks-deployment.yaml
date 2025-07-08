@@ -1,0 +1,73 @@
+name: Restart AKS Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      port_context:
+        required: true
+        description: 'Action and general context (blueprint, entity, run id, etc...)'
+        type: string
+
+jobs:
+  restart-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: 'actions/checkout@v4'
+      
+      - name: Inform Port of workflow start
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).runId}}
+          logMessage: Configuring Azure credentials to restart AKS deployment ${{ fromJson(inputs.port_context).entity.properties.deploymentName }}
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"130ee721-0888-4c6d-b95d-10a291bd8093","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+
+      - uses: azure/aks-set-context@v4
+        with:
+           resource-group: 'port-ocean-azure-azure-rg'
+           cluster-name: 'test-isaac-cluster'
+           
+      - name: Get Pods
+        run: |
+          kubectl get pods -n azure-store
+          
+      - name: Restart Kubernetes deployment
+        run: |
+          kubectl rollout restart deployment/order-service -n azure-store
+          
+      - name: Wait for deployment rollout
+        run: |
+          kubectl rollout status deployment/order-service -n azure-store --timeout=300s
+          
+      - name: Inform Port about deployment restart success
+        if: success()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'SUCCESS'
+          logMessage: ✅ AKS deployment ${{ fromJson(inputs.port_context).entity.properties.deploymentName }} restarted successfully
+          summary: AKS deployment restart completed successfully
+
+      - name: Inform Port about deployment restart failure
+        if: failure()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'FAILURE'
+          logMessage: ❌ Failed to restart AKS deployment ${{ fromJson(inputs.port_context).entity.properties.deploymentName }}
+          summary: AKS deployment restart failed
