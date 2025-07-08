@@ -32,18 +32,15 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
       - id: 'get-credentials'
         uses: 'google-github-actions/get-gke-credentials@v2'
         with:
-          cluster_name: ${{ fromJson(inputs.port_context).entity.relations.cluster }}
+          cluster_name: ${{ fromJson(inputs.port_context).entity.properties.cluster }}
           location: 'eu-central1'
         
       - name: Delete Kubernetes pod
         run: |
-          kubectl delete pod ${{ fromJson(inputs.port_context).entity.title }} -n ${{ fromJson(inputs.port_context).entity.relations.namespace }}
+          kubectl delete pod ${{ fromJson(inputs.port_context).entity.title }} -n ${{ fromJson(inputs.port_context).entity.properties.namespace }}
           
       - name: Inform Port about pod deletion success
         if: success()
