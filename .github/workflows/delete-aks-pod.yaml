@@ -32,15 +32,15 @@ jobs:
       - uses: azure/aks-set-context@v4
         with:
            resource-group: 'port-ocean-azure-azure-rg'
-           cluster-name: ${{ fromJson(inputs.port_context).entity.properties.Cluster }}
+           cluster-name: ${{ fromJson(inputs.port_context).entity.properties.cluster }}
            
       - name: Get Pods
         run: |
-          kubectl get pods -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }}
+          kubectl get pods -n ${{ fromJson(inputs.port_context).entity.properties.mamespace }}
           
       - name: Delete Kubernetes pod
         run: |
-          kubectl delete pod ${{ fromJson(inputs.port_context).entity.title }} -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }}
+          kubectl delete pod ${{ fromJson(inputs.port_context).entity.title }} -n ${{ fromJson(inputs.port_context).entity.properties.namespace }}
           
       - name: Inform Port about pod deletion success
         if: success()
@@ -52,8 +52,8 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
           status: 'SUCCESS'
-          logMessage: ✅ GKE pod ${{ fromJson(inputs.port_context).entity.title }} deleted successfully
-          summary: GKE pod deletion completed successfully
+          logMessage: ✅ AKS pod ${{ fromJson(inputs.port_context).entity.title }} deleted successfully
+          summary: AKS pod deletion completed successfully
 
       - name: Inform Port about pod deletion failure
         if: failure()
@@ -65,5 +65,5 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
           status: 'FAILURE'
-          logMessage: ❌ Failed to delete GKE pod ${{ fromJson(inputs.port_context).entity.title }}
-          summary: GKE pod deletion failed
+          logMessage: ❌ Failed to delete AKS pod ${{ fromJson(inputs.port_context).entity.title }}
+          summary: AKS pod deletion failed
