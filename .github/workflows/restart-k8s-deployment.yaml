@@ -36,7 +36,7 @@ jobs:
 
       - name: Restart Kubernetes deployment
         run: |
-          kubectl get pods
+          kubectl get pods --all-namespaces
           
 
       - name: Inform Port about deployment restart success
