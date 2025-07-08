@@ -36,7 +36,7 @@ jobs:
            
       - name: Get Pods
         run: |
-          kubectl get pods -n ${{ fromJson(inputs.port_context).entity.properties.mamespace }}
+          kubectl get pods -n ${{ fromJson(inputs.port_context).entity.properties.namespace }}
           
       - name: Delete Kubernetes pod
         run: |
