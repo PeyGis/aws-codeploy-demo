@@ -33,18 +33,23 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
       - id: 'get-credentials'
         uses: 'google-github-actions/get-gke-credentials@v2'
         with:
           cluster_name: 'autopilot-cluster-1'
           location: 'us-central1'
-        
-        # The KUBECONFIG env var is automatically exported and picked up by kubectl.
-      - id: 'get-pods'
-        run: 'kubectl get pods'
+
+      - name: Get Pods
+        run: |
+          kubectl get pods -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }}
+          
+      - name: Restart Kubernetes deployment
+        run: |
+          kubectl rollout restart deployment/${{ fromJson(inputs.port_context).entity.identifier }} -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }}
+          
+      - name: Wait for deployment rollout
+        run: |
+          kubectl rollout status deployment/${{ fromJson(inputs.port_context).entity.identifier }} -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }} --timeout=300s
       
       - name: Inform Port about Compute Engine start success
         if: success()
