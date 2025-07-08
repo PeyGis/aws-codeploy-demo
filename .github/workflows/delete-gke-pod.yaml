@@ -36,7 +36,7 @@ jobs:
         uses: 'google-github-actions/get-gke-credentials@v2'
         with:
           cluster_name: ${{ fromJson(inputs.port_context).entity.properties.cluster }}
-          #location: 'us-central1'
+          location: 'us-central1'
         
       - name: Delete Kubernetes pod
         run: |
