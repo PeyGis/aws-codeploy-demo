@@ -32,19 +32,19 @@ jobs:
       - uses: azure/aks-set-context@v4
         with:
            resource-group: 'port-ocean-azure-azure-rg'
-           cluster-name: 'test-isaac-cluster'
+           cluster-name: ${{ fromJson(inputs.port_context).entity.properties.Cluster }}
            
       - name: Get Pods
         run: |
-          kubectl get pods -n ${{ fromJson(inputs.port_context).entity.relations.namespace }}
+          kubectl get pods -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }}
           
       - name: Restart Kubernetes deployment
         run: |
-          kubectl rollout restart deployment/${{ fromJson(inputs.port_context).entity.identifier }} -n ${{ fromJson(inputs.port_context).entity.relations.namespace }}
+          kubectl rollout restart deployment/${{ fromJson(inputs.port_context).entity.identifier }} -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }}
           
       - name: Wait for deployment rollout
         run: |
-          kubectl rollout status deployment/${{ fromJson(inputs.port_context).entity.identifier }} -n ${{ fromJson(inputs.port_context).entity.relations.namespace }} --timeout=300s
+          kubectl rollout status deployment/${{ fromJson(inputs.port_context).entity.identifier }} -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }} --timeout=300s
           
       - name: Inform Port about deployment restart success
         if: success()
