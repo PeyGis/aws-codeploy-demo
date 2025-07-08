@@ -1,0 +1,69 @@
+name: Delete AKS Pod
+
+on:
+  workflow_dispatch:
+    inputs:
+      port_context:
+        required: true
+        description: 'Action and general context (blueprint, entity, run id, etc...)'
+        type: string
+
+jobs:
+  delete-pod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: 'actions/checkout@v4'
+      
+      - name: Inform Port of workflow start
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).runId}}
+          logMessage: Configuring Azure credentials to delete AKS pod ${{ fromJson(inputs.port_context).entity.title }}
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"130ee721-0888-4c6d-b95d-10a291bd8093","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+
+      - uses: azure/aks-set-context@v4
+        with:
+           resource-group: 'port-ocean-azure-azure-rg'
+           cluster-name: ${{ fromJson(inputs.port_context).entity.properties.Cluster }}
+           
+      - name: Get Pods
+        run: |
+          kubectl get pods -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }}
+          
+      - name: Delete Kubernetes pod
+        run: |
+          kubectl delete pod ${{ fromJson(inputs.port_context).entity.title }} -n ${{ fromJson(inputs.port_context).entity.relations.Namespace }}
+          
+      - name: Inform Port about pod deletion success
+        if: success()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'SUCCESS'
+          logMessage: ✅ GKE pod ${{ fromJson(inputs.port_context).entity.title }} deleted successfully
+          summary: GKE pod deletion completed successfully
+
+      - name: Inform Port about pod deletion failure
+        if: failure()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'FAILURE'
+          logMessage: ❌ Failed to delete GKE pod ${{ fromJson(inputs.port_context).entity.title }}
+          summary: GKE pod deletion failed
