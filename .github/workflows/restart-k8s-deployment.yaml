@@ -1,0 +1,66 @@
+name: Restart Local Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      port_context:
+        required: true
+        description: 'Action and general context (blueprint, entity, run id, etc...)'
+        type: string
+
+jobs:
+  restart-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: 'actions/checkout@v4'
+      
+      - name: Inform Port of workflow start
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{fromJson(inputs.port_context).runId}}
+          logMessage: Configuring local kubeconfig to restart deployment ${{ fromJson(inputs.port_context).entity.properties.deploymentName }}
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+
+      - name: Restart Kubernetes deployment
+        run: |
+          kubectl get pods
+          
+
+      - name: Inform Port about deployment restart success
+        if: success()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'SUCCESS'
+          logMessage: ✅ Local deployment ${{ fromJson(inputs.port_context).entity.properties.deploymentName }} restarted successfully
+          summary: Local deployment restart completed successfully
+
+      - name: Inform Port about deployment restart failure
+        if: failure()
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: 'FAILURE'
+          logMessage: ❌ Failed to restart local deployment ${{ fromJson(inputs.port_context).entity.properties.deploymentName }}
+          summary: Local deployment restart failed
