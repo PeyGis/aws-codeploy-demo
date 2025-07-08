@@ -24,10 +24,10 @@ jobs:
           runId: ${{fromJson(inputs.port_context).runId}}
           logMessage: Configuring local kubeconfig to restart deployment ${{ fromJson(inputs.port_context).entity.properties.deploymentName }}
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
+      # - name: Set up kubectl
+      #   uses: azure/setup-kubectl@v3
+      #   with:
+      #     version: 'latest'
 
       - name: Configure kubectl
         run: |
