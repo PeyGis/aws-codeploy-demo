@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.PORT_GITHUB_TOKEN }}
-          repository: ${{ inputs.repo_name }}
+          repository: PeyGis/${{ inputs.repo_name }}
           ref: main
 
       - name: Configure Git 
