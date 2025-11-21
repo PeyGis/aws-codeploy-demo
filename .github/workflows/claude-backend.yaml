@@ -20,13 +20,13 @@ permissions:
 jobs:
   claude-generic:
     env:
-      GITHUB_TOKEN: ${{ secrets.PORT_GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PORT_GITHUB_TOKEN }}
+          token: ${{ github.token }}
           repository: PeyGis/${{ inputs.repo_name }}
           ref: main
 
