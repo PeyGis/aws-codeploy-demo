@@ -16,11 +16,12 @@ on:
 permissions:
   contents: write
   packages: write
+  pull-requests: write
         
 jobs:
   claude-generic:
     env:
-      GITHUB_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
